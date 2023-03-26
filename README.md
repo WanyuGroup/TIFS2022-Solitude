@@ -1,10 +1,8 @@
 # Solitude
 
-This repository is the official implementation of the paper [Towards Private Learning on Decentralized Graphs with Local Differential Privacy](). 
+This repository is the official implementation of TIFS 2022 paper [Towards Private Learning on Decentralized Graphs with Local Differential Privacy](https://wanyu-lin.github.io/assets/pdf/wanyu-tifs2022.pdf). 
 
-**Abstract**
-
-> 	Many real-world networks are inherently decentralized. For example, in social networks, each user maintains a local view of a social graph, such as a list of friends and her profile. It is typical to collect these local views of social graphs and conduct graph learning tasks. However, learning over graphs can raise privacy concerns as these local views often contain sensitive information. In this paper, we seek to ensure private graph learning on a decentralized network graph. Towards this objective, we propose Solitude, a new privacy-preserving learning framework based on graph neural networks (GNNs), with formal privacy guarantees based on edge local differential privacy. The crux of Solitude is a set of new delicate mechanisms that can calibrate the introduced noise in the decentralized graph collected from the users. The principle behind the calibration is the intrinsic properties shared by many real-world graphs, such as sparsity. Unlike existing work on locally private GNNs, our new framework can simultaneously protect node feature privacy and edge privacy, and can seamlessly incorporate with any GNN with privacy-utility guarantees. Extensive experiments on benchmarking datasets show that Solitude can retain the generalization capability of the learned GNN while preserving the users’ data privacy under given privacy budgets.
+Wanyu Lin, Baochun Li, and Cong Wang. ”Towards Private Learning on Decentralized Graphs with Local Differential Privacy, ” in IEEE Transactions on Information Forensics & Security (TIFS), 2022.
 
 ## Requirements
 
