@@ -80,10 +80,7 @@ class KarateClub(InMemoryDataset):
 
 supported_datasets = {
     'cora': partial(Planetoid, name='cora'),
-    'pubmed': partial(Planetoid, name='pubmed'),
-    'facebook': partial(KarateClub, name='facebook'),
     'lastfm': partial(KarateClub, name='lastfm', transform=FilterTopClass(10)),
-    'wikipedia': partial(KarateClub, name='wikipedia', transform=FilterTopClass(10)),
     'citeseer': partial(Planetoid, name='citeseer'),
 }
 
@@ -95,9 +92,12 @@ def load_dataset(
         val_ratio:      dict(help='fraction of nodes used for validation') = .25,
         test_ratio:     dict(help='fraction of nodes used for test') = .25,
         ):
-    data = supported_datasets[dataset](root=os.path.join(data_dir, dataset))
+    
 
+    data = supported_datasets[dataset](root=os.path.join(data_dir, dataset))
+    
     data = AddTrainValTestMask(split='train_rest', num_val=val_ratio, num_test=test_ratio)(data[0])
+
     data = ToSparseTensor(remove_edge_index=False)(data)
 
     row, col = data.edge_index
@@ -113,3 +113,4 @@ def load_dataset(
     data.y = F.one_hot(data.y)
 
     return data
+

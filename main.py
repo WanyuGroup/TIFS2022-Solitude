@@ -17,12 +17,19 @@ from transforms import FeaturePerturbation, EdgePerturbation
 from utils import print_args, WandbLogger, add_parameters_as_argument, \
     measure_runtime, from_args, str2bool, Enum, EnumAction, colored_text
 
+from torch_geometric.transforms import ToSparseTensor
+from torch_geometric.data import Data
+
 class LogMode(Enum):
     INDIVIDUAL = 'individual'
     COLLECTIVE = 'collective'
 
 
 def seed_everything(seed):
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -34,9 +41,9 @@ def confidence_interval(data, func=np.mean, size=1000, ci=95, seed=12345):
     bounds = sns.utils.ci(bs_replicates, ci)
     return (bounds[1] - bounds[0]) / 2
 
-
 @measure_runtime
 def run(args):
+
     test_acc_1 = []
     run_metrics = {}
     run_id = str(uuid.uuid1())
@@ -55,16 +62,11 @@ def run(args):
         try:
             dataset = from_args(load_dataset, args)
             data = dataset.clone().to(args.device)
-
             # preprocess data
             data = Compose([
                 from_args(FeaturePerturbation, args),
                 from_args(EdgePerturbation, args)
             ])(data)
-            # to calculate average degree
-            # row, col = data.edge_index
-            # deg = degree(row, data.x.size()[0], dtype=data.x.dtype)
-            # print(deg.sum()/data.x.size()[0], data.real_deg.sum()/data.x.size()[0])
 
             # define model
             model = from_args(NodeClassifier, args, input_dim=data.num_features, num_classes=data.num_classes)
@@ -72,7 +74,7 @@ def run(args):
             # train the model
             trainer = from_args(Trainer, args, logger=logger if args.log_mode == LogMode.INDIVIDUAL else None)
             
-            best_metrics_1 = trainer.fit(model, data)
+            best_metrics_1 = trainer.fit(model, data, args)
             # process results
             for metric, value in best_metrics_1.items():
                 run_metrics[metric] = run_metrics.get(metric, []) + [value]
@@ -95,6 +97,8 @@ def run(args):
             if args.log and args.log_mode == LogMode.INDIVIDUAL:
                 logger.finish()
 
+
+        
 def main():
     init_parser = ArgumentParser(add_help=False, conflict_handler='resolve')
 
@@ -119,12 +123,14 @@ def main():
     # experiment args
     group_expr = init_parser.add_argument_group('experiment arguments')
     group_expr.add_argument('-s', '--seed', type=int, default=None, help='initial random seed')
+    group_expr.add_argument('--checkpoint_dir', type=str, default='./ckpt', help='store the checkpoint')
     group_expr.add_argument('-r', '--repeats', type=int, default=1, help="number of times the experiment is repeated")
     group_expr.add_argument('-o', '--output-dir', type=str, default='./output', help="directory to store the results")
     group_expr.add_argument('--log', type=str2bool, nargs='?', const=True, default=False, help='enable wandb logging')
     group_expr.add_argument('--log-mode', type=LogMode, action=EnumAction, default=LogMode.INDIVIDUAL,
                             help='wandb logging mode')
-    group_expr.add_argument('--project-name', type=str, default='LPGNN', help='wandb project name')
+    group_expr.add_argument('--project-name', type=str, default='Solitude', help='wandb project name')
+    group_expr.add_argument('--retrain', action='store_true') 
 
     parser = ArgumentParser(parents=[init_parser], formatter_class=ArgumentDefaultsHelpFormatter)
     args = parser.parse_args()

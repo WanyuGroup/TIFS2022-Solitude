@@ -1,5 +1,7 @@
+import os
 import sys
 import torch
+from copy import deepcopy
 from torch._C import device
 from torch.optim import SGD, Adam
 from tqdm.auto import tqdm
@@ -49,14 +51,27 @@ class Trainer:
         elif self.optimizer_name == 'adam':
             return Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
 
-    def fit(self, model, data):
+    def fit(self, model, data, args):
+
         self.model = model.to(self.device)
         data = data.to(self.device)
-
         optimizer = self.configure_optimizers()
         num_epochs_without_improvement = 0
         best_metrics = None
+        
+        # Load a model checkpoint
+        ckpt_path = os.path.join(args.checkpoint_dir, f'{args.dataset, args.x_eps, args.e_eps, args.x_steps, args.y_steps, args.model}.pt')
+        if os.path.exists(ckpt_path) and not args.retrain:
+            print("Load checkpoint from {}".format(ckpt_path))
+            checkpoint = torch.load(ckpt_path)
+            self.model.load_state_dict(checkpoint['model'])
+            model.eval()
+            val_metrics = self._validation(data)
+            return val_metrics
+        else:
+            args.retrain = True
 
+        # Retrain
         epoch_progbar = tqdm(range(1, self.max_epochs + 1), desc='Epoch: ', leave=False, position=1, file=sys.stdout)
         for epoch in epoch_progbar:
             metrics = {'epoch': epoch}
@@ -87,6 +102,13 @@ class Trainer:
             ):
                 best_metrics = metrics
                 num_epochs_without_improvement = 0
+                
+                torch.save({
+                    'model': deepcopy(model.state_dict()),
+                    'optimizer': deepcopy(optimizer.state_dict()),
+                    'epoch': epoch
+                }, ckpt_path)
+
             else:
                 num_epochs_without_improvement += 1
                 if num_epochs_without_improvement >= self.patience > 0:
@@ -94,11 +116,12 @@ class Trainer:
 
             # display metrics on progress bar
             epoch_progbar.set_postfix(metrics)
-
+        
         if self.logger:
             self.logger.log_summary(best_metrics)
-
+        
         return best_metrics
+    
 
     def _train(self, data, optimizer, i):
         self.model.train()
@@ -138,7 +161,11 @@ class Trainer:
         
         _, _, p_yt_x = self.model(data)
         loss_gnn = self.model.cross_entropy_loss(p_y=p_yt_x[data.train_mask], y=self.model.cached_yt[data.train_mask], weighted=False)
-        
+
+        # use total loss
+        # total_loss = loss_fro + self.gamma * loss_gnn + self.alpha * loss_l1 
+        # total_loss.backward()
+
         loss_diffiential =  loss_fro + self.gamma * loss_gnn 
         loss_diffiential.backward()
 
@@ -146,10 +173,6 @@ class Trainer:
 
         self.optimizer_l1.zero_grad()
         self.optimizer_l1.step()
-
-        # use total loss
-        # total_loss = loss_fro + self.gamma * loss_gnn + self.alpha * loss_l1 
-        # total_loss.backward()
 
         estimator.estimated_adj.data.copy_(torch.clamp(
                   estimator.estimated_adj.data, min=0, max=1))

@@ -1,6 +1,6 @@
 # Solitude
 
-This repository is the official implementation of the paper [Towards Private Learning on Decentralized Graphs with Local Differential Privacy](https://wanyu-lin.github.io/assets/pdf/wanyu-tifs2022.pdf). 
+This repository is the official implementation of the paper [Towards Private Learning on Decentralized Graphs with Local Differential Privacy](). 
 
 **Abstract**
 
@@ -21,7 +21,11 @@ This code is implemented in Python 3.9, and relies on the following packages:
 ### Training individual models
 If you want to individually train and evaluate the models on any of the datasets mentioned in the paper, run the following command:  
 ```
-python main.py -ee 8 -d cora [OPTIONS...]
+python main.py -d cora -ee 8 -ex 1 -kx 4 -ky 2 --model sage --learning_rate 0.01 --weight_decay 0.001 --dropout 0.5 -s 1234 --max-epochs 500 -o ./out/cora/ee8_ex1
+
+python main.py -d citeseer -ee 8 -ex 1 -kx 4 -ky 2 --model sage --learning_rate 0.01 --weight_decay 0.001 --dropout 0.5 -s 12345 --max-epochs 200 --orphic True -o ./out/citeseer/ee8_ex1
+
+python main.py -d lastfm -ee 8 -ex 1 -kx 4 --model sage --learning_rate 0.01 --weight_decay 0.001 --dropout 0.5 -s 12345 --max-epochs 500 -o ./out/lastfm/ee8_ex1
 
 dataset arguments:
   -d              <string>       name of the dataset (choices: cora, pubmed, facebook, lastfm) (default: cora)
@@ -39,6 +43,7 @@ model arguments:
   --hidden-dim    <integer>      dimension of the hidden layers (default: 16)
   --dropout       <float>        dropout rate (between zero and one) (default: 0.0)
   -kx             <integer>      KProp step parameter for features (default: 0)
+  -ky             <integer>      KProp step parameter for labels (default: 0)
   --forward       <boolean>      applies forward loss correction (default: True)
 
 trainer arguments:
@@ -50,6 +55,7 @@ trainer arguments:
   --device        <string>       desired device for training (choices: cuda, cpu) (default: cuda)
   --orphic        <string>       use estimator to clean graph (choices: True, False) (default: False)
   --inner_epoch   <integer>      the time of using estimator in a single epoch (default: 2)
+  --checkpoint_dir <string>      the path to save checkpoint
 
 experiment arguments:
   -s              <integer>      initial random seed (default: None)
@@ -58,6 +64,7 @@ experiment arguments:
   --log           <boolean>      enable wandb logging (default: False)
   --log-mode      <string>       wandb logging mode (choices: individual,collective) (default: individual)
   --project-name  <string>       wandb project name (default: Solitude)
+  --retrain       <boolean>      whether to retrain the model (default: False)
 ```
 
 The test result for each run will be saved as a csv file in the directory specified by  
