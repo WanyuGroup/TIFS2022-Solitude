@@ -1,6 +1,6 @@
 # Solitude
 
-This repository is the official implementation of TIFS 2022 paper [Towards Private Learning on Decentralized Graphs with Local Differential Privacy](https://wanyu-lin.github.io/assets/pdf/wanyu-tifs2022.pdf). 
+This repository is the official implementation of TIFS 2022 paper: [Towards Private Learning on Decentralized Graphs with Local Differential Privacy](https://wanyu-lin.github.io/assets/pdf/wanyu-tifs2022.pdf). 
 
 Wanyu Lin, Baochun Li, and Cong Wang. ”Towards Private Learning on Decentralized Graphs with Local Differential Privacy, ” in IEEE Transactions on Information Forensics & Security (TIFS), 2022.
 
